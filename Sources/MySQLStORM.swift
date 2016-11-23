@@ -62,18 +62,25 @@ open class MySQLStORM: StORM, StORMProtocol {
 
 //	@discardableResult
 	func exec(_ statement: String, params: [String], isInsert: Bool = false) throws {
-		connection.open()
-//		defer { connection.server.close() }
-		connection.statement = statement
+		let thisConnection = MySQLConnect(
+			host:		connect!.credentials.host,
+			username:	connect!.credentials.username,
+			password:	connect!.credentials.password,
+			database:	connect!.database,
+			port:		connect!.credentials.port
+		)
+		thisConnection.open()
+		defer { thisConnection.server.close() }
+		thisConnection.statement = statement
 
-		printDebug(statement, params)
+//		printDebug(statement, params)
 		//let querySuccess = connection.server.query(statement: statement, params: params)
 
-		lastStatement = MySQLStmt(connection.server)
+		lastStatement = MySQLStmt(thisConnection.server)
 		defer { lastStatement?.close() }
 		var res = lastStatement?.prepare(statement: statement)
 		guard res! else {
-			throw StORMError.error(connection.server.errorMessage())
+			throw StORMError.error(thisConnection.server.errorMessage())
 		}
 
 		for p in params {
@@ -82,9 +89,9 @@ open class MySQLStORM: StORM, StORMProtocol {
 
 		res = lastStatement?.execute()
 		guard res! else {
-			print(connection.server.errorMessage())
-			print(connection.server.errorCode())
-			throw StORMError.error(connection.server.errorMessage())
+			print(thisConnection.server.errorMessage())
+			print(thisConnection.server.errorCode())
+			throw StORMError.error(thisConnection.server.errorMessage())
 		}
 
 		let result = lastStatement?.results()
@@ -100,17 +107,25 @@ open class MySQLStORM: StORM, StORMProtocol {
 	// Returns a processed row set
 	@discardableResult
 	func execRows(_ statement: String, params: [String]) throws -> [StORMRow] {
-		connection.open()
-//		defer { connection.server.close() }
-		connection.statement = statement
+		let thisConnection = MySQLConnect(
+			host:		connect!.credentials.host,
+			username:	connect!.credentials.username,
+			password:	connect!.credentials.password,
+			database:	connect!.database,
+			port:		connect!.credentials.port
+		)
 
-		printDebug(statement, params)
+		thisConnection.open()
+		defer { thisConnection.server.close() }
+		thisConnection.statement = statement
 
-		lastStatement = MySQLStmt(connection.server)
+		//printDebug(statement, params)
+
+		lastStatement = MySQLStmt(thisConnection.server)
 //		defer { lastStatement?.close() }
 		var res = lastStatement?.prepare(statement: statement)
 		guard res! else {
-			throw StORMError.error(connection.server.errorMessage())
+			throw StORMError.error(thisConnection.server.errorMessage())
 		}
 
 		for p in params {
@@ -120,27 +135,21 @@ open class MySQLStORM: StORM, StORMProtocol {
 		res = lastStatement?.execute()
 
 		for index in 0..<Int((lastStatement?.fieldCount())!) {
-//			print("FIELD INFO: \(lastStatement?.fieldInfo(index: index))")
 			let this = lastStatement?.fieldInfo(index: index)!
-//			let tup = (this!.name, String(describing: this!.type))
 			results.fieldInfo[this!.name] = String(describing: this!.type)
 		}
 
 		guard res! else {
-			throw StORMError.error(connection.server.errorMessage())
+			throw StORMError.error(thisConnection.server.errorMessage())
 		}
 
 //		let result = connection.server.storeResults()!
 		let result = lastStatement?.results()
 
 		results.foundSetCount = (result?.numRows)!
-//		print(lastStatement?.fieldNames())
-//		print(results.fieldInfo)
 		results.fieldNames = fieldNamesToStringArray((lastStatement?.fieldNames())!)
 
 		let resultRows = parseRows(result!, resultSet: results)
-//		print("resultRows: \(resultRows)")
-//		print("resultRows[0].data: \(resultRows[0].data)")
 		return resultRows
 	}
 
