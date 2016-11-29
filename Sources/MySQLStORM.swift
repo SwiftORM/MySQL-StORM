@@ -9,11 +9,21 @@
 import StORM
 import MySQL
 
-public var connect: MySQLConnect?
+public struct MySQLConnector {
+
+	public static var host: String		= ""
+	public static var username: String	= ""
+	public static var password: String	= ""
+	public static var database: String	= ""
+	public static var port: Int			= 0
+
+	private init(){}
+
+}
 
 
 open class MySQLStORM: StORM, StORMProtocol {
-	open var connection = MySQLConnect()
+	private var connection = MySQLConnect()
 	public var lastStatement: MySQLStmt?
 
 	open func table() -> String {
@@ -24,11 +34,11 @@ open class MySQLStORM: StORM, StORMProtocol {
 		super.init()
 	}
 
-	public init(_ connect: MySQLConnect) {
-		super.init()
-		self.connection = connect
-		lastStatement = MySQLStmt(connect.server)
-	}
+//	public init(_ connect: MySQLConnect) {
+//		super.init()
+//		self.connection = connect
+//		lastStatement = MySQLStmt(connect.server)
+//	}
 
 	private func printDebug(_ statement: String, _ params: [String]) {
 		if StORMdebug { print("StORM Debug: \(statement) : \(params.joined(separator: ", "))") }
@@ -38,17 +48,28 @@ open class MySQLStORM: StORM, StORMProtocol {
 	// Returns raw result
 	@discardableResult
 	func exec(_ statement: String) throws -> MySQL.Results {
-		connection.open()
-//		defer { connection.server.close() }
-		connection.statement = statement
+
+		let thisConnection = MySQLConnect(
+			host:		MySQLConnector.host,
+			username:	MySQLConnector.username,
+			password:	MySQLConnector.password,
+			database:	MySQLConnector.database,
+			port:		MySQLConnector.port
+		)
+
+
+
+		thisConnection.open()
+		defer { thisConnection.server.close() }
+		thisConnection.statement = statement
 
 		printDebug(statement, [])
-		let querySuccess = connection.server.query(statement: statement)
+		let querySuccess = thisConnection.server.query(statement: statement)
 
 		guard querySuccess else {
-			throw StORMError.error(connection.server.errorMessage())
+			throw StORMError.error(thisConnection.server.errorMessage())
 		}
-		let result = connection.server.storeResults()!
+		let result = thisConnection.server.storeResults()!
 		return result
 	}
 	
@@ -63,18 +84,17 @@ open class MySQLStORM: StORM, StORMProtocol {
 //	@discardableResult
 	func exec(_ statement: String, params: [String], isInsert: Bool = false) throws {
 		let thisConnection = MySQLConnect(
-			host:		connect!.credentials.host,
-			username:	connect!.credentials.username,
-			password:	connect!.credentials.password,
-			database:	connect!.database,
-			port:		connect!.credentials.port
+			host:		MySQLConnector.host,
+			username:	MySQLConnector.username,
+			password:	MySQLConnector.password,
+			database:	MySQLConnector.database,
+			port:		MySQLConnector.port
 		)
 		thisConnection.open()
 		defer { thisConnection.server.close() }
 		thisConnection.statement = statement
 
 //		printDebug(statement, params)
-		//let querySuccess = connection.server.query(statement: statement, params: params)
 
 		lastStatement = MySQLStmt(thisConnection.server)
 		defer { lastStatement?.close() }
@@ -99,8 +119,6 @@ open class MySQLStORM: StORM, StORMProtocol {
 		if isInsert {
 			results.insertedID = Int((lastStatement?.insertId())!)
 		}
-//		connection.server.close()
-//		return result!
 	}
 
 	// Internal function which executes statements, with parameter binding
@@ -108,21 +126,20 @@ open class MySQLStORM: StORM, StORMProtocol {
 	@discardableResult
 	func execRows(_ statement: String, params: [String]) throws -> [StORMRow] {
 		let thisConnection = MySQLConnect(
-			host:		connect!.credentials.host,
-			username:	connect!.credentials.username,
-			password:	connect!.credentials.password,
-			database:	connect!.database,
-			port:		connect!.credentials.port
+			host:		MySQLConnector.host,
+			username:	MySQLConnector.username,
+			password:	MySQLConnector.password,
+			database:	MySQLConnector.database,
+			port:		MySQLConnector.port
 		)
 
 		thisConnection.open()
 		defer { thisConnection.server.close() }
 		thisConnection.statement = statement
 
-		//printDebug(statement, params)
+		printDebug(statement, params)
 
 		lastStatement = MySQLStmt(thisConnection.server)
-//		defer { lastStatement?.close() }
 		var res = lastStatement?.prepare(statement: statement)
 		guard res! else {
 			throw StORMError.error(thisConnection.server.errorMessage())
@@ -143,7 +160,6 @@ open class MySQLStORM: StORM, StORMProtocol {
 			throw StORMError.error(thisConnection.server.errorMessage())
 		}
 
-//		let result = connection.server.storeResults()!
 		let result = lastStatement?.results()
 
 		results.foundSetCount = (result?.numRows)!
@@ -199,6 +215,54 @@ open class MySQLStORM: StORM, StORMProtocol {
 			try insert(asData())
 		} catch {
 			throw StORMError.error(error.localizedDescription)
+		}
+	}
+
+
+	/// Table Create Statement
+	@discardableResult
+	open func setupTable(_ str: String = "") throws {
+		var createStatement = str
+		if str.characters.count == 0 {
+			var opt = [String]()
+			var keyName = ""
+			for child in Mirror(reflecting: self).children {
+				guard let key = child.label else {
+					continue
+				}
+				var verbage = ""
+				if !key.hasPrefix("internal_") {
+					verbage = "\(key) "
+					if child.value is Int && opt.count == 0 {
+						verbage += "int"
+					} else if child.value is Int {
+						verbage += "int"
+					} else if child.value is Bool {
+						verbage += "bool"
+					} else if child.value is Double {
+						verbage += "float"
+					} else if child.value is UInt || child.value is UInt8 || child.value is UInt16 || child.value is UInt32 || child.value is UInt64 {
+						verbage += "bytes"
+					} else {
+						verbage += "text"
+					}
+					if opt.count == 0 {
+						verbage += " NOT NULL AUTO_INCREMENT"
+						keyName = key
+					}
+					opt.append(verbage)
+				}
+			}
+			let keyComponent = ", PRIMARY KEY (`\(keyName)`)"
+
+			createStatement = "CREATE TABLE IF NOT EXISTS \(table()) (\(opt.joined(separator: ", "))\(keyComponent));"
+
+		}
+		do {
+			try sql(createStatement, params: [])
+		} catch {
+			print(error)
+			throw StORMError.error(String(describing: error))
 		}
 	}
 	

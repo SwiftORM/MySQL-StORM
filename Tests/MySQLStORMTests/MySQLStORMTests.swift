@@ -2,6 +2,7 @@ import XCTest
 import PerfectLib
 import Foundation
 import StORM
+import MySQLStORM
 @testable import MySQLStORM
 
 
@@ -9,7 +10,7 @@ class User: MySQLStORM {
 	// NOTE: First param in class should be the ID.
 	var id				: Int = 0
 	var firstname		: String = ""
-	var lastname			: String = ""
+	var lastname		: String = ""
 	var email			: String = ""
 
 
@@ -19,9 +20,15 @@ class User: MySQLStORM {
 
 	override func to(_ this: StORMRow) {
 		id				= Int(this.data["id"] as! Int32)
-		firstname		= this.data["firstname"] as! String
-		lastname			= this.data["lastname"] as! String
-		email			= this.data["email"] as! String
+		if let f = this.data["firstname"] {
+			firstname = UTF8Encoding.encode(bytes: f as! [UTF8.CodeUnit])
+		}
+		if let f = this.data["lastname"] {
+			lastname = UTF8Encoding.encode(bytes: f as! [UTF8.CodeUnit])
+		}
+		if let f = this.data["email"] {
+			email = UTF8Encoding.encode(bytes: f as! [UTF8.CodeUnit])
+		}
 	}
 
 	func rows() -> [User] {
@@ -39,30 +46,30 @@ class User: MySQLStORM {
 }
 
 
-class PostgresSTORMTests: XCTestCase {
+class MySQLStORMTests: XCTestCase {
 
-	#if os(Linux)
-	var connect = MySQLConnect(
-		host: ProcessInfo.processInfo.environment["HOST"]!,
-		username: ProcessInfo.processInfo.environment["USER"]!,
-		password: ProcessInfo.processInfo.environment["PASS"]!,
-		database: ProcessInfo.processInfo.environment["DB"]!,
-		port: Int(ProcessInfo.processInfo.environment["PORT"]!)!
-	)
-	#else
-	var connect = MySQLConnect(
-		host: "127.0.0.1",
-		username: "root",
-		password: "",
-		database: "perfect_testing",
-		port: 32783
-	)
-	#endif
 
 
 	override func setUp() {
 		super.setUp()
 //		StORMdebug = true
+		#if os(Linux)
+			MySQLConnector.host			= ProcessInfo.processInfo.environment["HOST"]!
+			MySQLConnector.username		= ProcessInfo.processInfo.environment["USER"]!
+			MySQLConnector.password		= ProcessInfo.processInfo.environment["PASS"]!
+			MySQLConnector.database		= ProcessInfo.processInfo.environment["DB"]!
+			MySQLConnector.port			= Int(ProcessInfo.processInfo.environment["PORT"]!)!
+
+		#else
+			MySQLConnector.host			= "127.0.0.1"
+			MySQLConnector.username		= "root"
+			MySQLConnector.password		= ""
+			MySQLConnector.database		= "perfect_testing"
+			MySQLConnector.port			= 3306
+			
+		#endif
+		let obj = User()
+		try? obj.setupTable()
 	}
 
 	/* =============================================================================================
@@ -71,11 +78,10 @@ class PostgresSTORMTests: XCTestCase {
 	func testSQLSelect() {
 //		StORMdebug = true
 
-		let obj = User(connect)
+		let obj = User()
 
 		do {
 			try obj.sql("SELECT firstname FROM users WHERE id = ?", params: ["1"])
-//			print(obj.results.foundSetCount)
 		} catch {
 			XCTFail(String(describing: error))
 		}
@@ -88,8 +94,7 @@ class PostgresSTORMTests: XCTestCase {
 	============================================================================================= */
 	func testSaveNew() {
 
-		let obj = User(connect)
-		//obj.connection = connect    // Use if object was instantiated without connection
+		let obj = User()
 		obj.firstname = "X"
 		obj.lastname = "Y"
 
@@ -105,8 +110,7 @@ class PostgresSTORMTests: XCTestCase {
 	Save - Update
 	============================================================================================= */
 	func testSaveUpdate() {
-		let obj = User(connect)
-		//obj.connection = connect    // Use if object was instantiated without connection
+		let obj = User()
 		obj.firstname = "X"
 		obj.lastname = "Y"
 
@@ -131,7 +135,7 @@ class PostgresSTORMTests: XCTestCase {
 	Save - Create
 	============================================================================================= */
 	func testSaveCreate() {
-		let obj = User(connect)
+		let obj = User()
 
 		do {
 			obj.id			= 10001
@@ -146,7 +150,7 @@ class PostgresSTORMTests: XCTestCase {
 		XCTAssert(obj.id == 10001, "Object not saved (create)")
 
 		// cleanup
-		let objCleanup = User(connect)
+		let objCleanup = User()
 		objCleanup.id = 10001
 		do {
 			try objCleanup.delete()
@@ -161,7 +165,7 @@ class PostgresSTORMTests: XCTestCase {
 	Get (with id)
 	============================================================================================= */
 	func testGetByPassingID() {
-		let obj = User(connect)
+		let obj = User()
 		//obj.connection = connect    // Use if object was instantiated without connection
 		obj.firstname = "X testGetByPassingID"
 		obj.lastname = "Y testGetByPassingID"
@@ -172,7 +176,7 @@ class PostgresSTORMTests: XCTestCase {
 			XCTFail(String(describing: error))
 		}
 
-		let obj2 = User(connect)
+		let obj2 = User()
 
 		do {
 			try obj2.get(obj.id)
@@ -189,36 +193,34 @@ class PostgresSTORMTests: XCTestCase {
 	Get (by id set)
 	============================================================================================= */
 	func testGetByID() {
-//		let obj = User(connect)
-//		//obj.connection = connect    // Use if object was instantiated without connection
-//		obj.firstname = "X"
-//		obj.lastname = "Y"
-//
-//		do {
-//			try obj.save {id in obj.id = id as! Int }
-//		} catch {
-//			XCTFail(String(describing: error))
-//		}
+		let obj = User()
+		obj.firstname = "testGetByID"
+		obj.lastname = "testGetByID"
 
-		let obj2 = User(connect)
-//		obj2.id = obj.id
-		obj2.id = 1
+		do {
+			try obj.save {id in obj.id = id as! Int }
+		} catch {
+			XCTFail(String(describing: error))
+		}
+
+		let obj2 = User()
+		obj2.id = obj.id
 
 		do {
 			try obj2.get()
 		} catch {
 			XCTFail(String(describing: error))
 		}
-//		XCTAssert(obj.id == obj2.id, "Object not the same (id)")
-//		XCTAssert(obj.firstname == obj2.firstname, "Object not the same (firstname)")
-//		XCTAssert(obj.lastname == obj2.lastname, "Object not the same (lastname)")
+		XCTAssert(obj.id == obj2.id, "Object not the same (id)")
+		XCTAssert(obj.firstname == obj2.firstname, "Object not the same (firstname)")
+		XCTAssert(obj.lastname == obj2.lastname, "Object not the same (lastname)")
 	}
 
 	/* =============================================================================================
 	Get (with id) - integer too large
 	============================================================================================= */
 	func testGetByPassingIDtooLarge() {
-		let obj = User(connect)
+		let obj = User()
 
 		do {
 			try obj.get(874682634789)
@@ -234,7 +236,7 @@ class PostgresSTORMTests: XCTestCase {
 	// test get where id does not exist (id)
 	============================================================================================= */
 	func testGetByPassingIDnoRecord() {
-		let obj = User(connect)
+		let obj = User()
 
 		do {
 			try obj.get(1111111)
@@ -257,7 +259,7 @@ class PostgresSTORMTests: XCTestCase {
 	// test get where id does not exist (id)
 	============================================================================================= */
 	func testGetBySettingIDnoRecord() {
-		let obj = User(connect)
+		let obj = User()
 		obj.id = 1111111
 		do {
 			try obj.get()
@@ -277,7 +279,7 @@ class PostgresSTORMTests: XCTestCase {
 	// deleteSQL
 	============================================================================================= */
 	func testCheckDeleteSQL() {
-		let obj = User(connect)
+		let obj = User()
 		XCTAssert(obj.deleteSQL("test", idName: "testid") == "DELETE FROM test WHERE testid = ?", "DeleteSQL statement is not correct")
 
 	}
@@ -292,7 +294,7 @@ class PostgresSTORMTests: XCTestCase {
 	Find
 	============================================================================================= */
 	func testFind() {
-		let obj = User(connect)
+		let obj = User()
 
 		do {
 			try obj.find([("firstname", "Joe")])
@@ -307,7 +309,7 @@ class PostgresSTORMTests: XCTestCase {
 
 
 
-	static var allTests : [(String, (PostgresSTORMTests) -> () throws -> Void)] {
+	static var allTests : [(String, (MySQLStORMTests) -> () throws -> Void)] {
 		return [
 			("testSaveNew", testSaveNew),
 			("testSaveUpdate", testSaveUpdate),
