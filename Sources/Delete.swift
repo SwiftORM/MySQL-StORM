@@ -8,9 +8,9 @@
 
 import PerfectLib
 import StORM
+import PerfectLogger
 
-// TODO:  detect response and return t/f as appropriate
-
+/// Performs delete-specific functions as an extension
 extension MySQLStORM {
 
 	func deleteSQL(_ table: String, idName: String = "id") -> String {
@@ -23,7 +23,8 @@ extension MySQLStORM {
 		do {
 			try exec(deleteSQL(self.table(), idName: idName), params: [String(id)])
 		} catch {
-			self.error = StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			self.error = StORMError.error("\(error)")
 			throw error
 		}
 		return true
@@ -35,7 +36,8 @@ extension MySQLStORM {
 		do {
 			try exec(deleteSQL(self.table(), idName: idName), params: [id])
 		} catch {
-			self.error = StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			self.error = StORMError.error("\(error)")
 			throw error
 		}
 		return true
@@ -47,7 +49,8 @@ extension MySQLStORM {
 		do {
 			try exec(deleteSQL(self.table(), idName: idName), params: [id.string])
 		} catch {
-			self.error = StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			self.error = StORMError.error("\(error)")
 			throw error
 		}
 		return true

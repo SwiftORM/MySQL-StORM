@@ -7,10 +7,12 @@
 //
 
 import StORM
+import PerfectLogger
 
+/// Performs insert functions as an extension to the main class.
 extension MySQLStORM {
 
-
+	/// Insert function where the suppled data is in [(String, Any)] format.
 	@discardableResult
 	public func insert(_ data: [(String, Any)]) throws -> Any {
 
@@ -23,38 +25,40 @@ extension MySQLStORM {
 		do {
 			return try insert(cols: keys, params: vals)
 		} catch {
-			throw StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			throw StORMError.error("\(error)")
 		}
 	}
 
 
+	/// Insert function where the suppled data is in matching arrays of columns and parameter values.
 	public func insert(cols: [String], params: [Any]) throws -> Any {
 		let (idname, _) = firstAsKey()
 		do {
 			return try insert(cols: cols, params: params, idcolumn: idname)
 		} catch {
-			throw StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			throw StORMError.error("\(error)")
 		}
 	}
 
+	/// Insert function where the suppled data is in matching arrays of columns and parameter values, as well as specifying the name of the id column.
 	public func insert(cols: [String], params: [Any], idcolumn: String) throws -> Any {
 
-		// PostgreSQL specific insert staement exec
 		var paramString = [String]()
 		var substString = [String]()
 		for i in 0..<params.count {
 			paramString.append(String(describing: params[i]))
-//			substString.append("$\(i+1)")
 			substString.append("?")
 		}
 		let str = "INSERT INTO \(self.table()) (\(cols.joined(separator: ","))) VALUES(\(substString.joined(separator: ",")))"
 
 		do {
 			_ = try exec(str, params: paramString, isInsert: true)
-//			return lastStatement?.insertId()
 			return results.insertedID
 		} catch {
-			self.error = StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			self.error = StORMError.error("\(error)")
 			throw error
 		}
 

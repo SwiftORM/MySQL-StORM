@@ -7,9 +7,14 @@
 //
 
 import StORM
+import PerfectLogger
 
+/// Extends the main class with update functions.
 extension MySQLStORM {
 
+	/// Updates the row with the specified data.
+	/// This is an alternative to the save() function.
+	/// Specify matching arrays of columns and parameters, as well as the id name and value.
 	@discardableResult
 	public func update(cols: [String], params: [Any], idName: String, idValue: Any) throws -> Bool {
 
@@ -26,13 +31,17 @@ extension MySQLStORM {
 		do {
 			try exec(str, params: paramsString)
 		} catch {
-			self.error = StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			self.error = StORMError.error("\(error)")
 			throw error
 		}
 
 		return true
 	}
 
+	/// Updates the row with the specified data.
+	/// This is an alternative to the save() function.
+	/// Specify a [(String, Any)] of columns and parameters, as well as the id name and value.
 	@discardableResult
 	public func update(data: [(String, Any)], idName: String = "id", idValue: Any) throws -> Bool {
 
@@ -45,7 +54,8 @@ extension MySQLStORM {
 		do {
 			return try update(cols: keys, params: vals, idName: idName, idValue: idValue)
 		} catch {
-			throw StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			throw StORMError.error("\(error)")
 		}
 	}
 

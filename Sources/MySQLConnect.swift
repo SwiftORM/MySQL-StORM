@@ -8,10 +8,13 @@
 
 import StORM
 import MySQL
+import PerfectLogger
 
+/// Base connector class, inheriting from StORMConnect.
+/// Provides connection services for the Database Provider
 open class MySQLConnect: StORMConnect {
 
-	// server connection
+	/// Server connection container
 	public let server = MySQL()
 
 
@@ -35,7 +38,8 @@ open class MySQLConnect: StORMConnect {
 	}
 
 
-	// Initiates the connection
+	/// Opens the connection
+	/// If StORMdebug is true, the connection state will be output to console and to ./StORMlog.txt
 	public func open() {
 		let status = server.connect(
 			host: self.credentials.host,
@@ -46,7 +50,8 @@ open class MySQLConnect: StORMConnect {
 		)
 
 		guard status else {
-			// verify we connected successfully
+			// verify connection success
+			if StORMdebug { LogFile.error("MySQL connection error: \(server.errorMessage())", logFile: "./StORMlog.txt") }
 			print(server.errorMessage())
 			resultCode = .error(server.errorMessage())
 			return
@@ -54,6 +59,7 @@ open class MySQLConnect: StORMConnect {
 		resultCode = .noError
 	}
 
+	/// Closes the connection
 	public func close() {
 		server.close()
 	}

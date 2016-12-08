@@ -8,40 +8,47 @@
 
 import StORM
 import MySQL
+import PerfectLogger
 
+/// MySQLConnector sets the connection parameters for the PostgreSQL Server access
+/// Usage:
+/// MySQLConnector.host = "XXXXXX"
+/// MySQLConnector.username = "XXXXXX"
+/// MySQLConnector.password = "XXXXXX"
+/// MySQLConnector.port = 3306
 public struct MySQLConnector {
 
 	public static var host: String		= ""
 	public static var username: String	= ""
 	public static var password: String	= ""
 	public static var database: String	= ""
-	public static var port: Int			= 0
+	public static var port: Int			= 3306
 
 	private init(){}
 
 }
 
 
+/// SuperClass that inherits from the foundation "StORM" class.
+/// Provides MySQLL-specific ORM functionality to child classes
 open class MySQLStORM: StORM, StORMProtocol {
-	private var connection = MySQLConnect()
+
+	/// Holds the last statement executed
 	public var lastStatement: MySQLStmt?
 
+	/// Table that the child object relates to in the database.
+	/// Defined as "open" as it is meant to be overridden by the child class.
 	open func table() -> String {
 		return "unset"
 	}
 
+	/// Public init
 	override public init() {
 		super.init()
 	}
 
-//	public init(_ connect: MySQLConnect) {
-//		super.init()
-//		self.connection = connect
-//		lastStatement = MySQLStmt(connect.server)
-//	}
-
 	private func printDebug(_ statement: String, _ params: [String]) {
-		if StORMdebug { print("StORM Debug: \(statement) : \(params.joined(separator: ", "))") }
+		if StORMdebug { LogFile.debug("StORM Debug: \(statement) : \(params.joined(separator: ", "))", logFile: "./StORMlog.txt") }
 	}
 
 	// Internal function which executes statements, with parameter binding
@@ -93,8 +100,6 @@ open class MySQLStORM: StORM, StORMProtocol {
 		thisConnection.open()
 		defer { thisConnection.server.close() }
 		thisConnection.statement = statement
-
-//		printDebug(statement, params)
 
 		lastStatement = MySQLStmt(thisConnection.server)
 		defer { lastStatement?.close() }
@@ -170,17 +175,27 @@ open class MySQLStORM: StORM, StORMProtocol {
 	}
 
 
+	/// Generic "to" function
+	/// Defined as "open" as it is meant to be overridden by the child class.
+	///
+	/// Sample usage:
+	///		id				= this.data["id"] as? Int ?? 0
+	///		firstname		= this.data["firstname"] as? String ?? ""
+	///		lastname		= this.data["lastname"] as? String ?? ""
+	///		email			= this.data["email"] as? String ?? ""
 	open func to(_ this: StORMRow) {
-		//		id				= this.data["id"] as! Int
-		//		firstname		= this.data["firstname"] as! String
-		//		lastname		= this.data["lastname"] as! String
-		//		email			= this.data["email"] as! String
 	}
 
+	/// Generic "makeRow" function
+	/// Defined as "open" as it is meant to be overridden by the child class.
 	open func makeRow() {
 		self.to(self.results.rows[0])
 	}
 
+	/// Standard "Save" function.
+	/// Designed as "open" so it can be overriden and customized.
+	/// If an ID has been defined, save() will perform an updae, otherwise a new document is created.
+	/// On error can throw a StORMError error.
 	@discardableResult
 	open func save() throws {
 		do {
@@ -191,9 +206,16 @@ open class MySQLStORM: StORM, StORMProtocol {
 				try update(data: asData(1), idName: idname, idValue: idval)
 			}
 		} catch {
-			throw StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			throw StORMError.error("\(error)")
 		}
 	}
+
+	/// Alternate "Save" function.
+	/// This save method will use the supplied "set" to assign or otherwise process the returned id.
+	/// Designed as "open" so it can be overriden and customized.
+	/// If an ID has been defined, save() will perform an updae, otherwise a new document is created.
+	/// On error can throw a StORMError error.
 	@discardableResult
 	open func save(set: (_ id: Any)->Void) throws {
 		do {
@@ -205,23 +227,34 @@ open class MySQLStORM: StORM, StORMProtocol {
 				try update(data: asData(1), idName: idname, idValue: idval)
 			}
 		} catch {
-			throw StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			throw StORMError.error("\(error)")
 		}
 	}
 
+	/// Unlike the save() methods, create() mandates the addition of a new document, regardless of whether an ID has been set or specified.
 	@discardableResult
 	override open func create() throws {
 		do {
 			try insert(asData())
 		} catch {
-			throw StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			throw StORMError.error("\(error)")
 		}
 	}
 
 
-	/// Table Create Statement
+	/// Table Creation (alias for setup)
 	@discardableResult
 	open func setupTable(_ str: String = "") throws {
+		try setup(str)
+	}
+
+	/// Table Creation
+	/// Requires the connection to be configured, as well as a valid "table" property to have been set in the class
+	@discardableResult
+	open func setup(_ str: String = "") throws {
+		LogFile.info("Running setup: \(table())", logFile: "./StORMlog.txt")
 		var createStatement = str
 		if str.characters.count == 0 {
 			var opt = [String]()
@@ -256,13 +289,13 @@ open class MySQLStORM: StORM, StORMProtocol {
 			let keyComponent = ", PRIMARY KEY (`\(keyName)`)"
 
 			createStatement = "CREATE TABLE IF NOT EXISTS \(table()) (\(opt.joined(separator: ", "))\(keyComponent));"
-
+			if StORMdebug { LogFile.info("createStatement: \(createStatement)", logFile: "./StORMlog.txt") }
 		}
 		do {
 			try sql(createStatement, params: [])
 		} catch {
-			print(error)
-			throw StORMError.error(String(describing: error))
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			throw StORMError.error("\(error)")
 		}
 	}
 	

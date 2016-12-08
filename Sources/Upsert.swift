@@ -7,13 +7,16 @@
 //
 
 import StORM
+import PerfectLogger
 
 
+/// An extention ot the main class that provides MySQL-specific "ON CONFLICT UPDATE" functionality.
 extension MySQLStORM {
 	
+	/// Inserts the row with the specified data, on conflict (conflickkeys columns) it will perform an update.
+	/// Specify matching arrays of columns and parameters, and an array of conflict key columns.
 	public func upsert(cols: [String], params: [Any], conflictkeys: [String]) throws {
 
-		// PostgreSQL specific insert staement exec
 		var paramsString = [String]()
 		var substString = [String]()
 		var upsertString = [String]()
@@ -31,7 +34,8 @@ extension MySQLStORM {
 		do {
 			try exec(str, params: paramsString)
 		} catch {
-			self.error = StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			self.error = StORMError.error("\(error)")
 			throw error
 		}
 

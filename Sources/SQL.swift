@@ -8,27 +8,32 @@
 
 import StORM
 import MySQL
+import PerfectLogger
 
+/// An extension to the main class providing SQL statement functions
 extension MySQLStORM {
 
 	/// Execute Raw SQL (with parameter binding)
-	/// Returns PGResult (discardable)
 	@discardableResult
 	public func sql(_ statement: String, params: [String]) throws {
 		do {
 			try exec(statement, params: params)
 		} catch {
-			self.error = StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			self.error = StORMError.error("\(error)")
 			throw error
 		}
 	}
 
+	/// Execute Raw SQL (with parameter binding)
+	/// Returns [StORMRow] (discardable)
 	@discardableResult
 	public func sqlRows(_ statement: String, params: [String]) throws -> [StORMRow] {
 		do {
 			return try execRows(statement, params: params)
 		} catch {
-			self.error = StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			self.error = StORMError.error("\(error)")
 			throw error
 		}
 	}

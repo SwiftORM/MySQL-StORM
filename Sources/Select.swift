@@ -7,9 +7,18 @@
 //
 
 import StORM
+import PerfectLogger
 
+/// Provides select functions as an extension to the main class.
 extension MySQLStORM {
 
+	/// Select function with specific where clause.
+	/// Parameterized statements are used, so all params should be passed in using the [Any] params array.
+	/// The whereclause should be specified in the following format: "name = ? AND email LIKE ?"
+	/// An orderby array can be specified in a String array like ["name DESC","email ASC"]
+	/// A StORMCursor can be supplied, otherwise the default values are used.
+	/// Note that the joins, having and groupBy functionality is unimplemented at this time.
+	/// The select function will populate the object with the results of the query.
 	public func select(
 		whereclause:	String,
 		params:			[Any],
@@ -22,10 +31,17 @@ extension MySQLStORM {
 		do {
 			try select(columns: [], whereclause: whereclause, params: params, orderby: orderby, cursor: cursor, joins: joins, having: having, groupBy: groupBy)
 		} catch {
-			throw StORMError.error(error.localizedDescription)
+			throw StORMError.error("\(error)")
 		}
 	}
 
+	/// Select function with specific where clause, and spefified columns to return.
+	/// Parameterized statements are used, so all params should be passed in using the [Any] params array.
+	/// The whereclause should be specified in the following format: "name = ? AND email LIKE ?"
+	/// An orderby array can be specified in a String array like ["name DESC","email ASC"]
+	/// A StORMCursor can be supplied, otherwise the default values are used.
+	/// Note that the joins, having and groupBy functionality is unimplemented at this time.
+	/// The select function will populate the object with the results of the query.
 	public func select(
 		columns:		[String],
 		whereclause:	String,
@@ -66,9 +82,6 @@ extension MySQLStORM {
 			let getCount = try execRows("SELECT \(clauseCount) FROM \(table()) \(clauseWhere)", params: paramsString)
 			let numrecords = getCount[0].data["counter"]!
 
-//			print("getCount.first?.data[\"counter\"]: \(getCount.first?.data["counter"])")
-//			print("numrecords: \(numrecords)")
-
 			results.cursorData = StORMCursor(
 				limit: cursor.limit,
 				offset: cursor.offset,
@@ -91,18 +104,13 @@ extension MySQLStORM {
 			// save results into ResultSet
 			results.rows = try execRows(str, params: paramsString)
 
-			// id no records found throw an error .noRecordFound
-//			if results.cursorData.totalRecords == 0 {
-//				self.error = StORMError.noRecordFound
-//				throw StORMError.noRecordFound
-//			}
-
 			// if just one row returned, act like a "GET"
 			if results.cursorData.totalRecords == 1 { makeRow() }
 
 			//return results
 		} catch {
-			self.error = StORMError.error(error.localizedDescription)
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			self.error = StORMError.error("\(error)")
 			throw error
 		}
 	}
