@@ -67,7 +67,7 @@ open class MySQLStORM: StORM, StORMProtocol {
 
 
 		thisConnection.open()
-		defer { thisConnection.server.close() }
+		//		defer { thisConnection.server.close() }
 		thisConnection.statement = statement
 
 		printDebug(statement, [])
@@ -77,9 +77,10 @@ open class MySQLStORM: StORM, StORMProtocol {
 			throw StORMError.error(thisConnection.server.errorMessage())
 		}
 		let result = thisConnection.server.storeResults()!
+		thisConnection.server.close()
 		return result
 	}
-	
+
 	private func fieldNamesToStringArray(_ arr: [Int:String]) -> [String] {
 		var out = [String]()
 		for i in 0..<arr.count {
@@ -88,7 +89,7 @@ open class MySQLStORM: StORM, StORMProtocol {
 		return out
 	}
 
-//	@discardableResult
+	//	@discardableResult
 	func exec(_ statement: String, params: [String], isInsert: Bool = false) throws {
 		let thisConnection = MySQLConnect(
 			host:		MySQLConnector.host,
@@ -98,7 +99,7 @@ open class MySQLStORM: StORM, StORMProtocol {
 			port:		MySQLConnector.port
 		)
 		thisConnection.open()
-		defer { thisConnection.server.close() }
+		//		defer { thisConnection.server.close() }
 		thisConnection.statement = statement
 
 		lastStatement = MySQLStmt(thisConnection.server)
@@ -124,6 +125,7 @@ open class MySQLStORM: StORM, StORMProtocol {
 		if isInsert {
 			results.insertedID = Int((lastStatement?.insertId())!)
 		}
+		thisConnection.server.close()
 	}
 
 	// Internal function which executes statements, with parameter binding
@@ -139,7 +141,7 @@ open class MySQLStORM: StORM, StORMProtocol {
 		)
 
 		thisConnection.open()
-		defer { thisConnection.server.close() }
+		//		defer { thisConnection.server.close() }
 		thisConnection.statement = statement
 
 		printDebug(statement, params)
@@ -171,6 +173,7 @@ open class MySQLStORM: StORM, StORMProtocol {
 		results.fieldNames = fieldNamesToStringArray((lastStatement?.fieldNames())!)
 
 		let resultRows = parseRows(result!, resultSet: results)
+		thisConnection.server.close()
 		return resultRows
 	}
 
@@ -265,22 +268,26 @@ open class MySQLStORM: StORM, StORMProtocol {
 				}
 				var verbage = ""
 				if !key.hasPrefix("internal_") {
-					verbage = "\(key) "
+					verbage = "`\(key)` "
 					if child.value is Int && opt.count == 0 {
 						verbage += "int"
 					} else if child.value is Int {
 						verbage += "int"
 					} else if child.value is Bool {
-						verbage += "bool"
+						verbage += "int" // MySQL has no bool type
 					} else if child.value is Double {
 						verbage += "float"
 					} else if child.value is UInt || child.value is UInt8 || child.value is UInt16 || child.value is UInt32 || child.value is UInt64 {
-						verbage += "bytes"
+						verbage += "blob"
 					} else {
 						verbage += "text"
 					}
 					if opt.count == 0 {
-						verbage += " NOT NULL AUTO_INCREMENT"
+						if child.value is Int {
+							verbage = "`\(key)` int NOT NULL AUTO_INCREMENT"
+						} else {
+							verbage = "`\(key)` varchar(255) NOT NULL"
+						}
 						keyName = key
 					}
 					opt.append(verbage)

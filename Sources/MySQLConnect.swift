@@ -26,11 +26,11 @@ open class MySQLConnect: StORMConnect {
 
 	/// Init with credentials
 	public init(
-	            host: String,
-	            username: String = "",
-	            password: String = "",
-	            database: String = "",
-	            port: Int = 0) {
+		host: String,
+		username: String = "",
+		password: String = "",
+		database: String = "",
+		port: Int = 0) {
 		super.init()
 		self.database = database
 		self.datasource = .MySQL
@@ -39,7 +39,7 @@ open class MySQLConnect: StORMConnect {
 
 
 	/// Opens the connection
-	/// If StORMdebug is true, the connection state will be output to console and to ./StORMlog.txt
+	/// If an error is generated, the connection state will be output to console and to ./StORMlog.txt
 	public func open() {
 		let status = server.connect(
 			host: self.credentials.host,
@@ -51,8 +51,7 @@ open class MySQLConnect: StORMConnect {
 
 		guard status else {
 			// verify connection success
-			if StORMdebug { LogFile.error("MySQL connection error: \(server.errorMessage())", logFile: "./StORMlog.txt") }
-			print(server.errorMessage())
+			LogFile.error("MySQL connection error: \(server.errorMessage())", logFile: "./StORMlog.txt")
 			resultCode = .error(server.errorMessage())
 			return
 		}

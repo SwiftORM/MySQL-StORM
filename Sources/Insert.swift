@@ -53,6 +53,8 @@ extension MySQLStORM {
 		}
 		let str = "INSERT INTO \(self.table()) (\(cols.joined(separator: ","))) VALUES(\(substString.joined(separator: ",")))"
 
+		if StORMdebug { LogFile.info("insert statement: \(str), params: \(paramString)", logFile: "./StORMlog.txt") }
+
 		do {
 			_ = try exec(str, params: paramString, isInsert: true)
 			return results.insertedID
@@ -61,8 +63,8 @@ extension MySQLStORM {
 			self.error = StORMError.error("\(error)")
 			throw error
 		}
-
+		
 	}
-
-
+	
+	
 }
