@@ -49,7 +49,7 @@ extension MySQLStORM {
 		var vals = [String]()
 		for i in 0..<data.count {
 			keys.append(data[i].0)
-			vals.append(data[i].1 as! String)
+			vals.append("\(data[i].1)")
 		}
 		do {
 			return try update(cols: keys, params: vals, idName: idName, idValue: idValue)
