@@ -15,19 +15,19 @@ class User: MySQLStORM {
 
 
 	override open func table() -> String {
-		return "users"
+		return "usertests"
 	}
 
 	override func to(_ this: StORMRow) {
 		id				= Int(this.data["id"] as! Int32)
 		if let f = this.data["firstname"] {
-			firstname = UTF8Encoding.encode(bytes: f as! [UTF8.CodeUnit])
+			firstname = f as! String
 		}
 		if let f = this.data["lastname"] {
-			lastname = UTF8Encoding.encode(bytes: f as! [UTF8.CodeUnit])
+			lastname = f as! String
 		}
 		if let f = this.data["email"] {
-			email = UTF8Encoding.encode(bytes: f as! [UTF8.CodeUnit])
+			email = f as! String
 		}
 	}
 
@@ -61,15 +61,15 @@ class MySQLStORMTests: XCTestCase {
 			MySQLConnector.port			= Int(ProcessInfo.processInfo.environment["PORT"]!)!
 
 		#else
-			MySQLConnector.host			= "127.0.0.1"
-			MySQLConnector.username		= "root"
-			MySQLConnector.password		= ""
+			MySQLConnector.host			= "localhost"
+			MySQLConnector.username		= "perfect"
+			MySQLConnector.password		= "perfect"
 			MySQLConnector.database		= "perfect_testing"
 			MySQLConnector.port			= 3306
 			
 		#endif
 		let obj = User()
-		try? obj.setupTable()
+		try? obj.setup()
 	}
 
 	/* =============================================================================================
@@ -81,7 +81,7 @@ class MySQLStORMTests: XCTestCase {
 		let obj = User()
 
 		do {
-			try obj.sql("SELECT firstname FROM users WHERE id = ?", params: ["1"])
+			try obj.sql("SELECT firstname FROM \(obj.table()) WHERE id = ?", params: ["1"])
 		} catch {
 			XCTFail(String(describing: error))
 		}
@@ -224,10 +224,9 @@ class MySQLStORMTests: XCTestCase {
 
 		do {
 			try obj.get(874682634789)
-			XCTFail("Should have failed (integer too large)")
+			XCTAssert(obj.results.cursorData.totalRecords == 0, "Object should have found no rows")
 		} catch {
-			print("^ Ignore this error, that is expected and should show 'ERROR:  value \"874682634789\" is out of range for type integer'")
-			// test passes - should have a failure!
+			XCTFail(error as! String)
 		}
 	}
 	
@@ -240,13 +239,9 @@ class MySQLStORMTests: XCTestCase {
 
 		do {
 			try obj.get(1111111)
-			XCTFail("Should have failed (record not found)")
+			XCTAssert(obj.results.cursorData.totalRecords == 0, "Object should have found no rows")
 		} catch {
-			if case .noRecordFound = obj.error {
-				XCTFail("Fall through... Should have failed (record not found): \(obj.error.string())")
-			}
-			print("^ Ignore this error, that is expected and should show 'ERROR:  not found'")
-			// test passes - should have a failure!
+			XCTFail(error as! String)
 		}
 	}
 
@@ -263,13 +258,9 @@ class MySQLStORMTests: XCTestCase {
 		obj.id = 1111111
 		do {
 			try obj.get()
-			XCTFail("Should have failed (record not found)")
+			XCTAssert(obj.results.cursorData.totalRecords == 0, "Object should have found no rows")
 		} catch {
-			if case .noRecordFound = obj.error {
-				XCTFail("Fall through... Should have failed (record not found): \(obj.error.string())")
-			}
-			print("^ Ignore this error, that is expected and should show 'ERROR:  not found'")
-			// test passes - should have a failure!
+			XCTFail(error as! String)
 		}
 	}
 
