@@ -30,6 +30,25 @@ extension MySQLStORM {
 		}
 	}
 
+	/// Insert function where the suppled data is in [String: Any] format.
+	public func insert(_ data: [String: Any]) throws -> Any {
+
+		var keys = [String]()
+		var vals = [String]()
+		for i in data.keys {
+			keys.append(i)
+			vals.append(data[i] as! String)
+		}
+
+		do {
+			return try insert(cols: keys, params: vals)
+		} catch {
+			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			throw StORMError.error("\(error)")
+		}
+	}
+
+
 
 	/// Insert function where the suppled data is in matching arrays of columns and parameter values.
 	public func insert(cols: [String], params: [Any]) throws -> Any {
