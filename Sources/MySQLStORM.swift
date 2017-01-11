@@ -267,7 +267,7 @@ open class MySQLStORM: StORM, StORMProtocol {
 					continue
 				}
 				var verbage = ""
-				if !key.hasPrefix("internal_") {
+				if !key.hasPrefix("internal_") && !key.hasPrefix("_") {
 					verbage = "`\(key)` "
 					if child.value is Int && opt.count == 0 {
 						verbage += "int"
