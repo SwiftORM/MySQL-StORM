@@ -39,7 +39,8 @@ open class MySQLStORM: StORM, StORMProtocol {
 	/// Table that the child object relates to in the database.
 	/// Defined as "open" as it is meant to be overridden by the child class.
 	open func table() -> String {
-		return "unset"
+		let m = Mirror(reflecting: self)
+		return ("\(m.subjectType)").lowercased()
 	}
 
 	/// Public init
