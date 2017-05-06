@@ -14,7 +14,6 @@ import PerfectLogger
 extension MySQLStORM {
 
 	/// Execute Raw SQL (with parameter binding)
-	@discardableResult
 	public func sql(_ statement: String, params: [String]) throws {
 		do {
 			try exec(statement, params: params)
