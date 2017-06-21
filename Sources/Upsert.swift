@@ -18,6 +18,7 @@ extension MySQLStORM {
 	public func upsert(cols: [String], params: [Any], conflictkeys: [String]) throws {
 
 		var paramsString = [String]()
+        var upsertParamsString = [String]()
 		var substString = [String]()
 		var upsertString = [String]()
 		for i in 0..<params.count {
@@ -27,10 +28,18 @@ extension MySQLStORM {
 			if i >= conflictkeys.count {
 				upsertString.append("\(String(describing: cols[i])) = ?")
 
-			}
+            }
+            
+            if !conflictkeys.contains(cols[i]) {
+                upsertParamsString.append(String(describing: params[i]))
+            }
 
 		}
-		let str = "INSERT INTO \(self.table()) (\(cols.joined(separator: ","))) VALUES(\(substString.joined(separator: ","))) ON CONFLICT (\(conflictkeys.joined(separator: ","))) DO UPDATE SET \(upsertString.joined(separator: ","))"
+        
+        paramsString.append(contentsOf: upsertParamsString)
+        
+        let str = "INSERT INTO \(self.table()) (\(cols.joined(separator: ","))) VALUES(\(substString.joined(separator: ","))) ON DUPLICATE KEY UPDATE \(upsertString.joined(separator: ","))"
+        
 		do {
 			try exec(str, params: paramsString)
 		} catch {
