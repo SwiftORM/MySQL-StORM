@@ -94,28 +94,48 @@ extension MySQLStORM {
 			clauseOrder = " ORDER BY \(orderby.joined(separator: ", "))"
 		}
 		do {
-			let getCount = try execRows("SELECT \(clauseCount) FROM \(table()) \(clauseWhere)", params: paramsString)
-			let numrecords = getCount[0].data["counter"]!
-
-			results.cursorData = StORMCursor(
-				limit: cursor.limit,
-				offset: cursor.offset,
-				totalRecords: Int(numrecords as! Int64))
-
-
-			// SELECT ASSEMBLE
-			var str = "SELECT \(clauseSelectList) FROM \(table()) \(clauseWhere) \(clauseOrder)"
-
-
-			// TODO: Add joins, having, groupby
-
+			
+            // JOIN
+            var joinClause = ""
+            for join in joins {
+                switch join.direction {
+                case .INNER:
+                    joinClause += " INNER JOIN \(join.table) ON \(join.onCondition) "
+                default: ()
+                }
+            }
+            
+            // SELECT ASSEMBLE
+            var str = "SELECT \(clauseSelectList) FROM \(table()) \(joinClause) \(clauseWhere) \(clauseOrder)"
+            
+            // SELECT COUNT(*) ASSEMBLE
+            var strCount = "SELECT \(clauseCount) FROM \(table()) \(joinClause) \(clauseWhere) \(clauseOrder)"
+            
+            
+			// TODO: having, groupby
+            
+            
+            // LIMIT & OFFSET
 			if cursor.limit > 0 {
-				str += " LIMIT \(cursor.limit)"
+                let limit = " LIMIT \(cursor.limit)"
+				str += limit
+                strCount += limit
 			}
 			if cursor.offset > 0 {
-				str += " OFFSET \(cursor.offset)"
+                let offset = " OFFSET \(cursor.offset)"
+				str += offset
+                strCount += offset
 			}
 
+            // get the number of records
+            let getCount = try execRows(strCount, params: paramsString)
+            let numrecords = getCount[0].data["counter"]!
+            
+            results.cursorData = StORMCursor(
+                limit: cursor.limit,
+                offset: cursor.offset,
+                totalRecords: Int(numrecords as! Int64))
+            
 			// save results into ResultSet
 			results.rows = try execRows(str, params: paramsString)
 
