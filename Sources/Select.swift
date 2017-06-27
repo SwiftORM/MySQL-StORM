@@ -109,7 +109,7 @@ extension MySQLStORM {
             var str = "SELECT \(clauseSelectList) FROM \(table()) \(joinClause) \(clauseWhere) \(clauseOrder)"
             
             // SELECT COUNT(*) ASSEMBLE
-            var strCount = "SELECT \(clauseCount) FROM \(table()) \(joinClause) \(clauseWhere) \(clauseOrder)"
+            let strCount = "SELECT \(clauseCount) FROM \(table()) \(joinClause) \(clauseWhere)"
             
             
 			// TODO: having, groupby
@@ -119,17 +119,17 @@ extension MySQLStORM {
 			if cursor.limit > 0 {
                 let limit = " LIMIT \(cursor.limit)"
 				str += limit
-                strCount += limit
+//                strCount += limit
 			}
 			if cursor.offset > 0 {
                 let offset = " OFFSET \(cursor.offset)"
 				str += offset
-                strCount += offset
+//                strCount += offset
 			}
 
             // get the number of records
             let getCount = try execRows(strCount, params: paramsString)
-            let numrecords = getCount[0].data["counter"]!
+            let numrecords = getCount[0].data["counter"] ?? 0
             
             results.cursorData = StORMCursor(
                 limit: cursor.limit,
