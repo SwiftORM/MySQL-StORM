@@ -43,4 +43,32 @@ extension MySQLStORM {
 		}
 		return resultRows
 	}
+
+	// decodes a TEXT field to JSON dict
+	public func fromJSONtoStringAny(_ data: String) -> [String:Any] {
+		var val = [String: Any]()
+
+		do {
+			val = try data.jsonDecode() as? [String:Any] ?? [String: Any]()
+		} catch {
+			print("invalid JSON")
+		}
+
+		return val
+	}
+
+	// decodes a TEXT field to JSON str array
+	public func fromJSONtoStringArray(_ data: String) -> [String] {
+		var val = [String]()
+
+		do {
+			val = try data.jsonDecode() as? [String] ?? [String]()
+		} catch {
+			print("invalid JSON")
+		}
+
+		return val
+	}
+
 }
+
