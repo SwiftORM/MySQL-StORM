@@ -23,6 +23,7 @@ public struct MySQLConnector {
 	public static var password: String	= ""
 	public static var database: String	= ""
 	public static var port: Int			= 3306
+	public static var charset: String	= "utf8mb4"
 
 	private init(){}
 
@@ -62,7 +63,8 @@ open class MySQLStORM: StORM, StORMProtocol {
 			username:	MySQLConnector.username,
 			password:	MySQLConnector.password,
 			database:	MySQLConnector.database,
-			port:		MySQLConnector.port
+			port:		MySQLConnector.port,
+			charset:	MySQLConnector.charset
 		)
 
 
@@ -97,7 +99,8 @@ open class MySQLStORM: StORM, StORMProtocol {
 			username:	MySQLConnector.username,
 			password:	MySQLConnector.password,
 			database:	MySQLConnector.database,
-			port:		MySQLConnector.port
+			port:		MySQLConnector.port,
+			charset:	MySQLConnector.charset
 		)
 		thisConnection.open()
 		//		defer { thisConnection.server.close() }
@@ -138,7 +141,8 @@ open class MySQLStORM: StORM, StORMProtocol {
 			username:	MySQLConnector.username,
 			password:	MySQLConnector.password,
 			database:	MySQLConnector.database,
-			port:		MySQLConnector.port
+			port:		MySQLConnector.port,
+			charset:	MySQLConnector.charset
 		)
 
 		thisConnection.open()

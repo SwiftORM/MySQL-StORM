@@ -30,10 +30,13 @@ open class MySQLConnect: StORMConnect {
 		username: String = "",
 		password: String = "",
 		database: String = "",
-		port: Int = 0) {
+		port: Int = 0,
+		charset: String = "utf8mb4") {
 		super.init()
 		self.database = database
 		self.datasource = .MySQL
+		//mysql.setOption(.MYSQL_SET_CHARSET_NAME, "utf8mb4")
+		let _ = self.server.setOption(.MYSQL_SET_CHARSET_NAME, "utf8mb4")
 		self.credentials = StORMDataSourceCredentials(host: host, port: port, user: username, pass: password)
 	}
 
