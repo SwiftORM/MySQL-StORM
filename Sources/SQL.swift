@@ -18,7 +18,9 @@ extension MySQLStORM {
 		do {
 			try exec(statement, params: params)
 		} catch {
-			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			if !MySQLConnector.quiet {
+				LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			}
 			self.error = StORMError.error("\(error)")
 			throw error
 		}
@@ -31,7 +33,9 @@ extension MySQLStORM {
 		do {
 			return try execRows(statement, params: params)
 		} catch {
-			LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			if !MySQLConnector.quiet {
+				LogFile.error("Error msg: \(error)", logFile: "./StORMlog.txt")
+			}
 			self.error = StORMError.error("\(error)")
 			throw error
 		}

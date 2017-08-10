@@ -25,6 +25,8 @@ public struct MySQLConnector {
 	public static var port: Int			= 3306
 	public static var charset: String	= "utf8mb4"
 
+	public static var quiet: Bool		= false
+
 	private init(){}
 
 }
@@ -119,8 +121,10 @@ open class MySQLStORM: StORM, StORMProtocol {
 
 		res = lastStatement?.execute()
 		guard res! else {
-			print(thisConnection.server.errorMessage())
-			print(thisConnection.server.errorCode())
+			if !MySQLConnector.quiet {
+				print(thisConnection.server.errorMessage())
+				print(thisConnection.server.errorCode())
+			}
 			throw StORMError.error(thisConnection.server.errorMessage())
 		}
 
