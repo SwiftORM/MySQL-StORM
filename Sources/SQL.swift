@@ -7,7 +7,7 @@
 //
 
 import StORM
-import MySQL
+import PerfectMySQL
 import PerfectLogger
 
 /// An extension to the main class providing SQL statement functions

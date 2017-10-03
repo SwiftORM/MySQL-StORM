@@ -7,7 +7,7 @@
 //
 
 import StORM
-import MySQL
+import PerfectMySQL
 import PerfectLogger
 
 /// Base connector class, inheriting from StORMConnect.

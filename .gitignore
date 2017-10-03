@@ -69,3 +69,5 @@ Packages/
 .build_lin
 buildlinux
 Package.pins
+Package.resolved
+PADockerfile_build

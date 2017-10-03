@@ -7,7 +7,7 @@
 //
 
 import StORM
-import MySQL
+import PerfectMySQL
 import PerfectLogger
 
 /// MySQLConnector sets the connection parameters for the PostgreSQL Server access
