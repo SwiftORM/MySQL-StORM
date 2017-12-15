@@ -263,7 +263,7 @@ open class MySQLStORM: StORM, StORMProtocol {
 	open func setup(_ str: String = "") throws {
 		LogFile.info("Running setup: \(table())", logFile: "./StORMlog.txt")
 		var createStatement = str
-		if str.characters.count == 0 {
+		if str.count == 0 {
 			var opt = [String]()
 			var keyName = ""
 			for child in Mirror(reflecting: self).children {
