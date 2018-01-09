@@ -18,19 +18,17 @@ import PerfectLogger
 /// MySQLConnector.port = 3306
 public struct MySQLConnector {
     
-    public static var host: String		= ""
-    public static var username: String	= ""
-    public static var password: String	= ""
-    public static var database: String	= ""
-    public static var port: Int			= 3306
-    public static var charset: String	= "utf8mb4"
+    public static var host:     String    = ""
+    public static var username: String    = ""
+    public static var password: String    = ""
+    public static var database: String    = ""
+    public static var port:     Int       = 3306
+    public static var charset:  String    = "utf8mb4"
     
-    public static var quiet: Bool		= false
+    public static var quiet:    Bool      = false
     
     private init(){}
-    
 }
-
 
 /// SuperClass that inherits from the foundation "StORM" class.
 /// Provides MySQLL-specific ORM functionality to child classes
@@ -51,6 +49,17 @@ open class MySQLStORM: StORM, StORMProtocol {
         super.init()
     }
     
+    /// This method can be overriden in MySQLStORM subclass to provide a different database configuration
+    open func configuration() -> MySQLConnect {
+        let conf = MySQLConnect(host: MySQLConnector.host,
+                                username: MySQLConnector.username,
+                                password: MySQLConnector.password,
+                                database: MySQLConnector.database,
+                                port: MySQLConnector.port,
+                                charset: MySQLConnector.charset)
+        return conf
+    }
+    
     private func printDebug(_ statement: String, _ params: [String]) {
         if StORMdebug { LogFile.debug("StORM Debug: \(statement) : \(params.joined(separator: ", "))", logFile: "./StORMlog.txt") }
     }
@@ -60,27 +69,26 @@ open class MySQLStORM: StORM, StORMProtocol {
     @discardableResult
     func exec(_ statement: String) throws -> MySQL.Results {
         
+        let conf = self.configuration()
         let thisConnection = MySQLConnect(
-            host:		MySQLConnector.host,
-            username:	MySQLConnector.username,
-            password:	MySQLConnector.password,
-            database:	MySQLConnector.database,
-            port:		MySQLConnector.port,
-            charset:	MySQLConnector.charset
+            host:        conf.credentials.host,
+            username:    conf.credentials.username,
+            password:    conf.credentials.password,
+            database:    conf.database,
+            port:        conf.credentials.port,
+            charset:     conf.charset
         )
         
-        
-        
         thisConnection.open()
-        //		defer { thisConnection.server.close() }
         thisConnection.statement = statement
-        
         printDebug(statement, [])
+        
         let querySuccess = thisConnection.server.query(statement: statement)
         
         guard querySuccess else {
             throw StORMError.error(thisConnection.server.errorMessage())
         }
+        
         let result = thisConnection.server.storeResults()!
         thisConnection.server.close()
         return result
@@ -94,22 +102,23 @@ open class MySQLStORM: StORM, StORMProtocol {
         return out
     }
     
-    //	@discardableResult
+    //    @discardableResult
     func exec(_ statement: String, params: [String], isInsert: Bool = false) throws {
+        let conf = self.configuration()
         let thisConnection = MySQLConnect(
-            host:		MySQLConnector.host,
-            username:	MySQLConnector.username,
-            password:	MySQLConnector.password,
-            database:	MySQLConnector.database,
-            port:		MySQLConnector.port,
-            charset:	MySQLConnector.charset
+            host:        conf.credentials.host,
+            username:    conf.credentials.username,
+            password:    conf.credentials.password,
+            database:    conf.database,
+            port:        conf.credentials.port,
+            charset:     conf.charset
         )
         thisConnection.open()
-        //		defer { thisConnection.server.close() }
         thisConnection.statement = statement
-        
         lastStatement = MySQLStmt(thisConnection.server)
+        
         defer { lastStatement?.close() }
+        
         var res = lastStatement?.prepare(statement: statement)
         guard res! else {
             throw StORMError.error(thisConnection.server.errorMessage())
@@ -140,22 +149,22 @@ open class MySQLStORM: StORM, StORMProtocol {
     // Returns a processed row set
     @discardableResult
     func execRows(_ statement: String, params: [String]) throws -> [StORMRow] {
+        let conf = self.configuration()
         let thisConnection = MySQLConnect(
-            host:		MySQLConnector.host,
-            username:	MySQLConnector.username,
-            password:	MySQLConnector.password,
-            database:	MySQLConnector.database,
-            port:		MySQLConnector.port,
-            charset:	MySQLConnector.charset
+            host:        conf.credentials.host,
+            username:    conf.credentials.username,
+            password:    conf.credentials.password,
+            database:    conf.database,
+            port:        conf.credentials.port,
+            charset:     conf.charset
         )
         
         thisConnection.open()
-        //		defer { thisConnection.server.close() }
         thisConnection.statement = statement
-        
         printDebug(statement, params)
         
         lastStatement = MySQLStmt(thisConnection.server)
+        
         var res = lastStatement?.prepare(statement: statement)
         guard res! else {
             throw StORMError.error(thisConnection.server.errorMessage())
@@ -186,15 +195,14 @@ open class MySQLStORM: StORM, StORMProtocol {
         return resultRows
     }
     
-    
     /// Generic "to" function
     /// Defined as "open" as it is meant to be overridden by the child class.
     ///
     /// Sample usage:
-    ///		id				= this.data["id"] as? Int ?? 0
-    ///		firstname		= this.data["firstname"] as? String ?? ""
-    ///		lastname		= this.data["lastname"] as? String ?? ""
-    ///		email			= this.data["email"] as? String ?? ""
+    ///        id              = this.data["id"] as? Int ?? 0
+    ///        firstname       = this.data["firstname"] as? String ?? ""
+    ///        lastname        = this.data["lastname"] as? String ?? ""
+    ///        email           = this.data["email"] as? String ?? ""
     open func to(_ this: StORMRow) {
     }
     
@@ -252,18 +260,18 @@ open class MySQLStORM: StORM, StORMProtocol {
         }
     }
     
-    
     /// Table Creation (alias for setup)
     open func setupTable(_ str: String = "") throws {
         try setup(str)
     }
     
+    //
     open subscript(key: String) -> MySQLDataType {
         get {
             return .notDefined
         }
     }
- 
+    
     /// Table Creation
     /// Requires the connection to be configured, as well as a valid "table" property to have been set in the class
     /// - Parameter str: create statement
