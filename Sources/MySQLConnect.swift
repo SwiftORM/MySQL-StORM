@@ -23,6 +23,8 @@ open class MySQLConnect: StORMConnect {
         self.datasource = .MySQL
     }
     
+    public private(set) var charset: String = "utf8mb4"
+    
     /// Init with credentials
     public init(
         host: String,
@@ -34,8 +36,8 @@ open class MySQLConnect: StORMConnect {
         super.init()
         self.database = database
         self.datasource = .MySQL
-        //mysql.setOption(.MYSQL_SET_CHARSET_NAME, "utf8mb4")
         let _ = self.server.setOption(.MYSQL_SET_CHARSET_NAME, charset)
+        self.charset = charset
         self.credentials = StORMDataSourceCredentials(host: host, port: port, user: username, pass: password)
     }
     
@@ -64,4 +66,3 @@ open class MySQLConnect: StORMConnect {
         server.close()
     }
 }
-
