@@ -71,3 +71,4 @@ buildlinux
 Package.pins
 Package.resolved
 PADockerfile_build
+StORMlog.txt

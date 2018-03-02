@@ -62,11 +62,24 @@ class MySQLStORMTests: XCTestCase {
 
 		#else
 			MySQLConnector.host			= "127.0.0.1"
-			MySQLConnector.username		= "root"
-			MySQLConnector.password		= "root"
+			MySQLConnector.username		= "test"
+			MySQLConnector.password		= "perfect"
 			MySQLConnector.database		= "perfect_testing"
-			MySQLConnector.port			= 8889
+			MySQLConnector.port			= 3306
+			MySQLConnector.method		= .network
+
+			/*
+			// Socket version
+			// uncomment these lines and comment out the network version above
 			
+			MySQLConnector.host			= "/tmp/mysql.sock"
+			MySQLConnector.username		= "test"
+			MySQLConnector.password		= "perfect"
+			MySQLConnector.database		= "perfect_testing"
+			MySQLConnector.port			= 3306
+			MySQLConnector.method		= .socket
+
+			*/
 		#endif
 		let obj = User()
 		try? obj.setup()
