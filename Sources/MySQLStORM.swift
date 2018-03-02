@@ -24,7 +24,8 @@ public struct MySQLConnector {
     public static var database: String    = ""
     public static var port:     Int       = 3306
     public static var charset:  String    = "utf8mb4"
-    
+	public static var method: 	StORMConnectionMethod    = .network
+
     public static var quiet:    Bool      = false
     
     private init(){}
@@ -55,8 +56,9 @@ open class MySQLStORM: StORM, StORMProtocol {
                                 username: MySQLConnector.username,
                                 password: MySQLConnector.password,
                                 database: MySQLConnector.database,
-                                port: MySQLConnector.port,
-                                charset: MySQLConnector.charset)
+								port: MySQLConnector.port,
+								charset: MySQLConnector.charset,
+								method: MySQLConnector.method)
         return conf
     }
     
@@ -71,12 +73,13 @@ open class MySQLStORM: StORM, StORMProtocol {
         
         let conf = self.configuration()
         let thisConnection = MySQLConnect(
-            host:        conf.credentials.host,
-            username:    conf.credentials.username,
-            password:    conf.credentials.password,
-            database:    conf.database,
-            port:        conf.credentials.port,
-            charset:     conf.charset
+            host:		conf.credentials.host,
+            username:	conf.credentials.username,
+            password:	conf.credentials.password,
+            database:	conf.database,
+            port:		conf.credentials.port,
+			charset:	conf.charset,
+			method: 	conf.credentials.method
         )
         
         thisConnection.open()
@@ -111,7 +114,8 @@ open class MySQLStORM: StORM, StORMProtocol {
             password:    conf.credentials.password,
             database:    conf.database,
             port:        conf.credentials.port,
-            charset:     conf.charset
+			charset:     conf.charset,
+			method: 	conf.credentials.method
         )
         thisConnection.open()
         thisConnection.statement = statement
@@ -156,7 +160,8 @@ open class MySQLStORM: StORM, StORMProtocol {
             password:    conf.credentials.password,
             database:    conf.database,
             port:        conf.credentials.port,
-            charset:     conf.charset
+			charset:     conf.charset,
+			method: 	conf.credentials.method
         )
         
         thisConnection.open()
