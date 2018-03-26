@@ -68,9 +68,9 @@ extension MySQLStORM {
 
 		var paramsString = [String]()
 		var set = [String]()
-		for i in 0..<data.count {
-			paramsString.append(data[i].1 as! String)
-			set.append("\(data[i].0) = ?")
+		for i in data {
+			paramsString.append(String(describing: i.1))
+			set.append("\(i.0) = ?")
 		}
 
 		do {
@@ -89,9 +89,9 @@ extension MySQLStORM {
 
 		var paramsString = [String]()
 		var set = [String]()
-		for i in data.keys {
-			paramsString.append(data[i] as! String)
-			set.append("\(i) = ?")
+		for (key, value) in data {
+			paramsString.append(String(describing: value))
+			set.append("\(key) = ?")
 		}
 
 		do {
