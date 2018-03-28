@@ -35,9 +35,9 @@ extension MySQLStORM {
 
 		var keys = [String]()
 		var vals = [String]()
-		for i in data.keys {
-			keys.append(i)
-			vals.append(data[i] as! String)
+		for (key, value) in data {
+			keys.append(key)
+			vals.append(String(describing: value))
 		}
 
 		do {
